@@ -1,48 +1,49 @@
-# Node.js 依赖
+﻿# Node.js 依赖
+# 原因：依赖包体积大（可能数百MB），可通过 package.json 重新安装，上传会增加仓库体积且容易导致冲突
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
 # 环境变量文件
+# 原因：可能包含敏感信息（如数据库密码、API 密钥、服务端配置等），上传会暴露安全风险
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-
 # 编译产物
-dist/
-build/
-out/
-
+# 原因：通过源代码重新构建生成，每次构建可能不同，上传会增加仓库体积且无必要
+/dist/
+/build/
+/out/
 # 日志文件
+# 原因：包含运行时信息，可能很大且与代码逻辑无关，上传会污染版本历史
 logs
 *.log
-
 # 操作系统文件
+# 原因：本地操作系统生成的文件，与项目代码无关，不同开发者的环境可能不同，上传会导致冲突
 .DS_Store
 Thumbs.db
-
 # IDE 文件
+# 原因：IDE 本地配置文件，不同开发者的 IDE 设置可能不同，上传会导致冲突
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
 # 数据库文件
+# 原因：可能包含测试数据或敏感信息，体积大，与代码逻辑无关，上传会增加仓库体积
 *.db
 *.sqlite
 *.sqlite3
-
 # 测试覆盖率
+# 原因：测试生成的统计文件，与代码逻辑无关，每次测试可能不同，上传会污染版本历史
 coverage/
 *.lcov
-
 # 临时文件
+# 原因：运行时生成的临时文件，会变化且与代码逻辑无关，上传会污染版本历史
 *.tmp
 *.temp
 .cache/

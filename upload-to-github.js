@@ -132,10 +132,33 @@ coverage/
 function addRemoteRepository(remoteUrl) {
   try {
     // 检查远程仓库是否已存在
-    execSync('git remote -v', { encoding: 'utf8' });
-    logWithColor('远程仓库已存在，跳过添加', 'yellow');
+    const remoteOutput = execSync('git remote -v', { encoding: 'utf8' });
+    if (remoteOutput.includes('origin')) {
+      logWithColor('远程仓库 origin 已存在，检查 URL...', 'yellow');
+      // 检查现有远程仓库 URL 是否正确
+      const existingUrl = execSync('git config --get remote.origin.url', { encoding: 'utf8' }).trim();
+      if (existingUrl !== remoteUrl) {
+        logWithColor(`现有 URL: ${existingUrl}`, 'yellow');
+        logWithColor(`期望 URL: ${remoteUrl}`, 'yellow');
+        logWithColor('更新远程仓库 URL...', 'blue');
+        runCommand(`git remote set-url origin ${remoteUrl}`);
+        logWithColor('远程仓库 URL 更新成功', 'green');
+      } else {
+        logWithColor('远程仓库 URL 正确，跳过更新', 'yellow');
+      }
+    } else {
+      logWithColor('添加远程仓库...', 'blue');
+      runCommand(`git remote add origin ${remoteUrl}`);
+      logWithColor('远程仓库添加成功', 'green');
+    }
   } catch (error) {
-    logWithColor('添加远程仓库...', 'blue');
+    logWithColor('添加远程仓库失败，尝试重新添加...', 'red');
+    // 尝试移除并重新添加
+    try {
+      execSync('git remote remove origin', { encoding: 'utf8' });
+    } catch (e) {
+      // 忽略移除失败的错误
+    }
     runCommand(`git remote add origin ${remoteUrl}`);
     logWithColor('远程仓库添加成功', 'green');
   }
@@ -191,24 +214,90 @@ function commitCode() {
   logWithColor('添加文件到暂存区...', 'blue');
   runCommand('git add .');
   
+  // 检查是否有文件被暂存
+  try {
+    const statusOutput = execSync('git status --porcelain', { encoding: 'utf8' });
+    if (!statusOutput.trim()) {
+      logWithColor('没有文件需要提交，跳过提交', 'yellow');
+      return;
+    }
+  } catch (error) {
+    logWithColor('检查暂存状态失败，继续尝试提交', 'yellow');
+  }
+  
   logWithColor('提交代码...', 'blue');
-  runCommand('git commit -m "Initial commit"');
-  logWithColor('代码提交成功', 'green');
+  try {
+    runCommand('git commit -m "Initial commit"');
+    logWithColor('代码提交成功', 'green');
+  } catch (error) {
+    logWithColor('提交失败，尝试配置用户信息后重新提交...', 'red');
+    // 检查并配置用户信息
+    try {
+      const config = readConfig();
+      if (config && config.username && config.email) {
+        runCommand(`git config user.name "${config.username}"`);
+        runCommand(`git config user.email "${config.email}"`);
+        logWithColor('已配置用户信息，重新尝试提交...', 'blue');
+        runCommand('git commit -m "Initial commit"');
+        logWithColor('代码提交成功', 'green');
+      } else {
+        throw new Error('缺少用户信息配置');
+      }
+    } catch (e) {
+      logWithColor('提交失败，请手动配置用户信息并提交', 'red');
+      logWithColor('建议执行以下命令：', 'yellow');
+      logWithColor('  git config user.name "Your GitHub Username"', 'yellow');
+      logWithColor('  git config user.email "your-github-email@example.com"', 'yellow');
+      logWithColor('  git commit -m "Initial commit"', 'yellow');
+      throw e;
+    }
+  }
 }
 
 // 推送代码到GitHub
 function pushToGitHub() {
   logWithColor('推送代码到GitHub...', 'blue');
   try {
-    // 尝试推送当前分支到远程
+    // 获取当前分支名称
     const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
-    runCommand(`git push -u origin ${currentBranch}`);
+    logWithColor(`当前分支: ${currentBranch}`, 'yellow');
+    
+    // 尝试推送当前分支到远程
+    try {
+      runCommand(`git push -u origin ${currentBranch}`);
+      logWithColor('代码推送成功', 'green');
+    } catch (error) {
+      // 如果失败，尝试推送master分支
+      logWithColor('推送当前分支失败，尝试使用master分支...', 'yellow');
+      try {
+        runCommand('git push -u origin master');
+        logWithColor('代码推送成功', 'green');
+      } catch (masterError) {
+        // 如果仍然失败，尝试创建并推送main分支
+        logWithColor('推送master分支失败，尝试使用main分支...', 'yellow');
+        try {
+          runCommand('git checkout -b main');
+          runCommand('git push -u origin main');
+          logWithColor('代码推送成功', 'green');
+        } catch (mainError) {
+          logWithColor('推送失败，请检查以下问题：', 'red');
+          logWithColor('1. GitHub仓库是否已创建', 'yellow');
+          logWithColor('2. 仓库URL是否正确', 'yellow');
+          logWithColor('3. 网络连接是否正常', 'yellow');
+          logWithColor('4. 是否有推送权限', 'yellow');
+          logWithColor('5. Git凭证是否正确', 'yellow');
+          logWithColor('\n建议手动执行以下命令检查：', 'yellow');
+          logWithColor('  git remote -v', 'yellow');
+          logWithColor('  git status', 'yellow');
+          logWithColor('  git push -u origin ' + currentBranch, 'yellow');
+          throw mainError;
+        }
+      }
+    }
   } catch (error) {
-    // 如果失败，尝试推送master分支
-    logWithColor('尝试使用master分支推送...', 'yellow');
-    runCommand('git push -u origin master');
+    logWithColor('推送代码失败', 'red');
+    throw error;
   }
-  logWithColor('代码推送成功', 'green');
 }
 
 // 主函数
@@ -217,57 +306,78 @@ async function main() {
   logWithColor('      一键上传项目到GitHub脚本          ', 'blue');
   logWithColor('========================================', 'blue');
   
-  // 读取配置文件
-  const config = readConfig();
-  
-  // 检查Git是否安装
-  checkGitInstalled();
-  
-  // 检查是否在Git仓库中
-  if (!isGitRepository()) {
-    initGitRepository();
-  } else {
-    logWithColor('当前目录已是Git仓库', 'yellow');
-  }
-  
-  // 创建.gitignore文件
-  createGitignore();
-  
-  // 配置Git用户信息
-  await configureGitUser(config);
-  
-  // 获取GitHub仓库URL
-  let remoteUrl;
-  if (config && config.repositoryUrl) {
-    remoteUrl = config.repositoryUrl;
-    logWithColor(`使用配置文件中的仓库URL: ${remoteUrl}`, 'green');
-  } else {
-    logWithColor('请输入您的GitHub仓库URL (例如: https://github.com/username/repository.git):', 'yellow');
-    remoteUrl = await readInput('');
-  }
-  
-  if (!remoteUrl) {
-    logWithColor('错误: 仓库URL不能为空', 'red');
+  try {
+    // 读取配置文件
+    const config = readConfig();
+    
+    // 检查Git是否安装
+    checkGitInstalled();
+    
+    // 检查是否在Git仓库中
+    if (!isGitRepository()) {
+      initGitRepository();
+    } else {
+      logWithColor('当前目录已是Git仓库', 'yellow');
+    }
+    
+    // 创建.gitignore文件
+    createGitignore();
+    
+    // 配置Git用户信息
+    await configureGitUser(config);
+    
+    // 获取GitHub仓库URL
+    let remoteUrl;
+    if (config && config.repositoryUrl) {
+      remoteUrl = config.repositoryUrl;
+      logWithColor(`使用配置文件中的仓库URL: ${remoteUrl}`, 'green');
+    } else {
+      logWithColor('请输入您的GitHub仓库URL (例如: https://github.com/username/repository.git):', 'yellow');
+      remoteUrl = await readInput('');
+    }
+    
+    if (!remoteUrl) {
+      logWithColor('错误: 仓库URL不能为空', 'red');
+      rl.close();
+      process.exit(1);
+    }
+    
+    // 验证仓库URL格式
+    if (!remoteUrl.startsWith('https://github.com/') && !remoteUrl.startsWith('git@github.com:')) {
+      logWithColor('警告: 仓库URL格式可能不正确', 'yellow');
+      logWithColor('建议格式: https://github.com/username/repository.git', 'yellow');
+    }
+    
+    // 添加远程仓库
+    addRemoteRepository(remoteUrl);
+    
+    // 提交代码
+    commitCode();
+    
+    // 推送代码到GitHub
+    pushToGitHub();
+    
+    logWithColor('========================================', 'green');
+    logWithColor('     项目上传到GitHub成功！             ', 'green');
+    logWithColor('========================================', 'green');
+    logWithColor(`仓库地址: ${remoteUrl}`, 'green');
+    logWithColor('\n提示: 上传完成后，您可以在GitHub上查看和管理您的项目', 'yellow');
+    
+  } catch (error) {
+    logWithColor('========================================', 'red');
+    logWithColor('       脚本执行失败，请检查错误信息       ', 'red');
+    logWithColor('========================================', 'red');
+    logWithColor(`错误信息: ${error.message}`, 'red');
+    logWithColor('\n请尝试以下解决方法:', 'yellow');
+    logWithColor('1. 检查GitHub仓库是否已创建', 'yellow');
+    logWithColor('2. 确认仓库URL格式正确', 'yellow');
+    logWithColor('3. 检查网络连接是否正常', 'yellow');
+    logWithColor('4. 确认您有仓库的推送权限', 'yellow');
+    logWithColor('5. 检查Git凭证是否正确配置', 'yellow');
+  } finally {
+    // 关闭readline接口
     rl.close();
-    process.exit(1);
   }
-  
-  // 添加远程仓库
-  addRemoteRepository(remoteUrl);
-  
-  // 提交代码
-  commitCode();
-  
-  // 推送代码到GitHub
-  pushToGitHub();
-  
-  logWithColor('========================================', 'green');
-  logWithColor('     项目上传到GitHub成功！             ', 'green');
-  logWithColor('========================================', 'green');
-  logWithColor(`仓库地址: ${remoteUrl}`, 'green');
-  
-  // 关闭readline接口
-  rl.close();
 }
 
 // 运行主函数

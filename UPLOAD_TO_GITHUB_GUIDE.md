@@ -57,7 +57,7 @@
 4. 选择仓库类型（公开/私有）
 5. 不要勾选 "Initialize this repository with a README" 等选项
 6. 点击 "Create repository"
-7. 复制生成的仓库URL（例如：`https://github.com/username/repository.git`）
+7. 复制生成的仓库URL（例如：`https://github.com/username/repository.git`）,完成配置文件 `github-config.json` 中的配置。
 
 ### 步骤2：运行脚本
 

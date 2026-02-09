@@ -199,7 +199,15 @@ function commitCode() {
 // 推送代码到GitHub
 function pushToGitHub() {
   logWithColor('推送代码到GitHub...', 'blue');
-  runCommand('git push -u origin main');
+  try {
+    // 尝试推送当前分支到远程
+    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+    runCommand(`git push -u origin ${currentBranch}`);
+  } catch (error) {
+    // 如果失败，尝试推送master分支
+    logWithColor('尝试使用master分支推送...', 'yellow');
+    runCommand('git push -u origin master');
+  }
   logWithColor('代码推送成功', 'green');
 }
 

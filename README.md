@@ -20,6 +20,7 @@
 │   └── src/              # 后端源代码
 │       ├── config/        # 配置文件目录
 │       │   └── db.js      # 数据库连接配置
+│       │   └── logger.js  # 日志记录配置
 │       ├── controllers/   # 控制器目录
 │       │   └── userController.js  # 用户控制器，实现业务逻辑
 │       ├── routes/        # 路由目录

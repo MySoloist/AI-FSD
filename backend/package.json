@@ -14,7 +14,8 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "mysql2": "^3.16.2"
+    "mysql2": "^3.16.2",
+    "winston": "^3.15.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

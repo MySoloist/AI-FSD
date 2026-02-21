@@ -1,5 +1,6 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const userRoutes = require('./routes/userRoutes');
 
 const app = express();
@@ -16,9 +17,12 @@ app.use(express.urlencoded({ extended: true })); // 解析 URL 编码的请求�
 // 注册路由
 app.use('/api/users', userRoutes); // 注意：根据 userRoutes.js 中的配置，这里使用 /api/users 作为前缀
 
+// 配置静态文件服务，用于提供前端静态文件
+app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+
 // 根路径
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to User Management API' });
+  res.sendFile(path.join(__dirname, '../../frontend/dist', 'index.html'));
 });
 
 module.exports = app;

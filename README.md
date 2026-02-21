@@ -27,6 +27,7 @@
 │       ├── app.js         # Express 应用实例，配置中间件和路由
 │       └── index.js       # 服务器启动文件，启动 Express 服务器
 ├── frontend/             # 前端源代码目录
+│   ├── dist/             # 前端构建输出目录
 │   ├── index.html        # HTML 模板
 │   ├── package-lock.json  # npm 依赖版本锁定文件
 │   ├── package.json       # 前端 npm 项目配置文件
@@ -38,6 +39,7 @@
 │   │   └── main.js       # Vue 应用入口文件
 │   └── vite.config.js    # Vite 构建工具配置文件
 ├── frontend-production/  # 前端生产版本目录
+│   ├── dist/             # 前端构建输出目录
 │   ├── index.html        # HTML 模板
 │   ├── package-lock.json  # npm 依赖版本锁定文件
 │   ├── package.json       # 前端生产版本 npm 配置文件
@@ -48,19 +50,25 @@
 │   │   ├── App.vue       # Vue 根组件
 │   │   └── main.js       # Vue 应用入口文件
 │   └── vite.config.js    # Vite 构建工具配置文件
+├── .gitignore            # Git 忽略文件配置
+├── Dockerfile            # Docker 镜像构建文件的步骤
+├── docker-compose.yml    # Docker Compose 配置文件
 ├── README.md             # 项目说明文档
 ├── UPLOAD_TO_GITHUB_GUIDE.md  # GitHub 上传指南
 ├── UsePostman.md         # Postman 测试指南
+├── build-docker-images.md  # Docker 镜像构建和运行教程
 ├── github-config.json    # GitHub 配置文件
 ├── github-config.json.example  # GitHub 配置文件示例
 ├── front-productiom.md   # 前端生产相关文档
 ├── project-issues.md     # 项目问题记录
-└── project-tasks.md      # 项目任务列表
+├── project-tasks.md      # 项目任务列表
+└── upload-to-github.js   # GitHub 上传脚本
 ```
 ### 项目结构说明
 | 目录/文件 | 类型 | 用途 |
 |----------|------|------|
 | `.trae/` | 目录 | Trae IDE 的配置和文档目录，包含项目相关的计划和规则 |
+| `.gitignore` | 文件 | Git 忽略文件配置，指定不需要版本控制的文件和目录 |
 | `backend/` | 目录 | 后端源代码目录，包含所有后端业务逻辑和配置 |
 | `backend/src/` | 目录 | 后端核心源代码目录 |
 | `backend/src/config/` | 目录 | 配置文件目录，存放数据库连接等配置 |
@@ -70,16 +78,22 @@
 | `backend/src/index.js` | 文件 | 服务器启动文件，启动 Express 服务器并监听端口 |
 | `backend/init-db.sql` | 文件 | 数据库初始化脚本，用于创建表结构和插入测试数据 |
 | `frontend/` | 目录 | 前端开发版本源代码目录，包含 Vue 项目代码 |
+| `frontend/dist/` | 目录 | 前端构建输出目录，包含构建后的静态文件 |
 | `frontend-production/` | 目录 | 前端生产版本目录，用于部署到生产环境 |
+| `frontend-production/dist/` | 目录 | 前端生产版本构建输出目录，包含构建后的静态文件 |
 | `frontend/src/` | 目录 | Vue 源代码目录 |
 | `frontend/src/api/` | 目录 | API 调用封装目录，用于前端与后端 API 交互 |
 | `frontend/src/router/` | 目录 | 前端路由配置目录，定义前端页面路由 |
 | `frontend/src/views/` | 目录 | 页面视图目录，包含前端页面组件 |
 | `frontend/src/App.vue` | 文件 | Vue 根组件，应用的主容器 |
 | `frontend/src/main.js` | 文件 | Vue 应用入口文件，初始化 Vue 应用 |
+| `Dockerfile` | 文件 | Docker 镜像构建文件，定义如何构建 Docker 镜像 |
+| `docker-compose.yml` | 文件 | Docker Compose 配置文件，定义多容器应用的服务配置 |
+| `build-docker-images.md` | 文件 | Docker 镜像构建和运行教程，详细说明如何构建和运行 Docker 镜像 |
 | `README.md` | 文件 | 项目说明文档，包含 API 设计和使用说明 |
 | `UsePostman.md` | 文件 | Postman 测试指南，详细说明如何使用 Postman 测试 API |
 | `UPLOAD_TO_GITHUB_GUIDE.md` | 文件 | GitHub 上传指南，说明如何将项目上传到 GitHub |
+| `upload-to-github.js` | 文件 | GitHub 上传脚本，用于自动化上传项目到 GitHub |
 | `project-issues.md` | 文件 | 项目问题记录，用于跟踪和解决项目中的问题 |
 | `project-tasks.md` | 文件 | 项目任务列表，用于项目管理和任务分配 |
 ## API 接口设计
@@ -241,6 +255,12 @@
 1. 进入前端目录：`cd frontend`
 2. 构建生产版本：`npm run build`
 3. 将生成的 `dist` 目录部署到静态文件服务器或 CDN
+### Docker 部署
+1. 确保已安装 Docker 和 Docker Compose
+2. 进入项目根目录
+3. 构建并启动服务：`docker-compose up -d`
+4. 停止服务：`docker-compose down`
+5. 查看详细的 Docker 构建和运行教程，请参考 [build-docker-images.md](build-docker-images.md) 文件
 ## 项目管理
 - [project-tasks.md](project-tasks.md)：项目任务列表，用于项目管理和任务分配
 - [project-issues.md](project-issues.md)：项目问题记录，用于跟踪和解决项目中的问题
